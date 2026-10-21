@@ -69,6 +69,23 @@ func TestAnEarlierSaveStillNames(t *testing.T) {
 	}
 }
 
+// exiftool -all= appends a save whose trailer has no properties at all.
+// The ones before are then an earlier save's, not the document's.
+func TestATrailerWithoutPropertiesClearsThem(t *testing.T) {
+	p := newPDF()
+	info := p.add("<< /Author (Ada Lovelace) >>")
+	p.page("<< >>", "")
+	first := p.bytes(fmt.Sprintf("/Info %d 0 R", info))
+	second := update(first, map[int]string{1: "<< /Type /Catalog /Pages 2 0 R >>"}, len(p.objs)+1, "")
+	_, clues := check(t, nil, writeFile(t, "cleared.pdf", second))
+	if has(found(clues, kindDocument, names), "Ada Lovelace") {
+		t.Error("properties no trailer points to any more were reported as the document's")
+	}
+	if !has(found(clues, kindEarlier, names), "Ada Lovelace") {
+		t.Errorf("they were not reported as an earlier save's: %v", clues)
+	}
+}
+
 // A PDF written this century packs its dictionaries inside object streams
 // and indexes them with a stream. The figure has to be found there too.
 func TestObjectStreams(t *testing.T) {

@@ -36,7 +36,12 @@ if [ "$2" = "mac" ]; then
     # The Mac's own tar keeps the same attributes, unless told not to.
     (cd mac && tar -czf ../mac.tgz data)
     expect mac.tgz - link 1 example-university.edu yes
-    (cd mac && COPYFILE_DISABLE=1 tar --no-mac-metadata -czf ../mac-clean.tgz data)
+    # Nor do COPYFILE_DISABLE and --no-mac-metadata leave it out, which is
+    # what every answer about ._ files says to use: they stop the ._
+    # entries, and the attributes go into the headers instead.
+    (cd mac && COPYFILE_DISABLE=1 tar --no-mac-metadata -czf ../mac-nometa.tgz data)
+    expect mac-nometa.tgz - link 1 example-university.edu yes
+    (cd mac && COPYFILE_DISABLE=1 tar --no-mac-metadata --no-xattrs -czf ../mac-clean.tgz data)
     expect mac-clean.tgz - link 1 example-university.edu no
     # zip from the command line keeps none of it.
     (cd mac && zip -qr ../cli.zip data)
@@ -128,6 +133,7 @@ paper "" lualatex luatex-suppressed "\\pdfvariable suppressoptionalinfo 15"
 expect luatex-suppressed.pdf - figure 2 "Grace Hopper" no
 
 paper "" xelatex xetex ""
+expect xetex.pdf - figure 2 "Grace Hopper" no
 expect xetex.pdf - picture 2 "Caroline Herschel" yes
 expect xetex.pdf "Hedy Lamarr" text 3 "Hedy Lamarr" yes
 

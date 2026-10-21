@@ -110,13 +110,17 @@ func (p *paperRead) properties() {
 	live := map[string]bool{}
 	var infoRefs []Ref
 	liveRef := Ref{-1, 0}
-	for _, t := range doc.trailersNewestFirst() {
+	for i, t := range doc.trailersNewestFirst() {
 		ref, ok := t["Info"].(Ref)
 		if !ok {
 			continue
 		}
-		if liveRef.Num < 0 {
-			liveRef = ref // the newest trailer's is the one in force
+		// Only the newest trailer's is in force. exiftool -all= writes a
+		// trailer with no Info at all, and the first version of this took
+		// the one before it for the document's, and so reported the
+		// properties exiftool had just been asked to clear as current.
+		if i == 0 {
+			liveRef = ref
 		}
 		infoRefs = appendRef(infoRefs, ref)
 	}
@@ -577,6 +581,12 @@ func (p *paperRead) outline() {
 			if !ok || count > 5000 {
 				return
 			}
+			if r, ok := node.(Ref); ok {
+				if p.seen[r] {
+					return // a loop in the bookmarks
+				}
+				p.seen[r] = true
+			}
 			count++
 			p.add(kindOutline, "the bookmarks", "bookmark", textOf(p.doc.Resolve(d["Title"])), false)
 			if d["First"] != nil {
@@ -653,10 +663,22 @@ func (p *paperRead) rest() {
 		if p.seen[ref] {
 			continue
 		}
+		// The catalogue and the bookmarks' root hold the names of what was
+		// already read under its own name: the attached files, the
+		// outline.
+		if d, ok := doc.Objects[ref].(Dict); ok && (d["Type"] == Name("Catalog") || d["Type"] == Name("Outlines")) {
+			continue
+		}
 		// Metadata nothing points to any more, or that hangs off an object
 		// this did not read for its own sake.
 		if s, ok := doc.Objects[ref].(*Stream); ok && s.Dict["Type"] == Name("Metadata") {
-			p.xmp(s, kindObject, fmt.Sprintf("XMP metadata kept elsewhere in the file (object %d)", ref.Num), nil, nil)
+			if p.saves > 1 {
+				// Saved more than once and pointed to by nothing: what an
+				// earlier save had, which the one that cleared it left.
+				p.xmp(s, kindEarlier, "the XMP metadata of an earlier save", nil, nil)
+			} else {
+				p.xmp(s, kindObject, fmt.Sprintf("XMP metadata kept elsewhere in the file (object %d)", ref.Num), nil, nil)
+			}
 			continue
 		}
 		for _, s := range doc.Seen[ref] {

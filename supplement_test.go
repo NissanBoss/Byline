@@ -66,8 +66,9 @@ func TestMacArchives(t *testing.T) {
 		"__MACOSX/data/._results.csv": string(appleDouble("https://mail.example-university.edu/attachment?id=12345")),
 	})
 	_, clues := check(t, nil, writeFile(t, "s.zip", z))
-	if !has(found(clues, kindLink, points), "example-university.edu") {
-		t.Errorf("the download address was not found: %v", clues)
+	got := found(clues, kindLink, points)
+	if len(got) != 1 || got[0] != "https://mail.example-university.edu/attachment?id=12345|where it was downloaded from" {
+		t.Errorf("the download address came out as %v", got)
 	}
 }
 

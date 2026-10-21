@@ -253,9 +253,21 @@ func exifJPEG(artist string, lat, lon float64) []byte {
 // writes it, a binary property list.
 func appleDouble(url string) []byte {
 	be := binary.BigEndian
-	// The value: a bplist00 array of one string. Only the string matters to
-	// the reader, which looks for addresses in it, so the rest is minimal.
-	value := []byte("bplist00\xa1\x01\x5f\x10" + string(rune(len(url))) + url)
+	// The value: a binary property list holding an array of one string,
+	// with its offset table and its trailer, the way Safari writes it.
+	var pl bytes.Buffer
+	pl.WriteString("bplist00")
+	pl.Write([]byte{0xA1, 0x01})
+	pl.Write([]byte{0x5F, 0x10, byte(len(url))})
+	pl.WriteString(url)
+	table := pl.Len()
+	pl.Write([]byte{8, 10})
+	pl.Write(make([]byte, 6))
+	pl.Write([]byte{1, 1})
+	binary.Write(&pl, be, uint64(2))
+	binary.Write(&pl, be, uint64(0))
+	binary.Write(&pl, be, uint64(table))
+	value := pl.Bytes()
 	name := []byte("com.apple.metadata:kMDItemWhereFroms\x00")
 	var attr bytes.Buffer
 	// 26 bytes of header, two entries, the Finder information at 50.

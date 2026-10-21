@@ -240,12 +240,68 @@ func (c *run) appleDouble(where, name string, data []byte) {
 	}
 }
 
+// plistStrings reads the strings of a binary property list, which is how
+// a Mac stores the addresses a file came from. Reading the bytes as text
+// instead glued the next object's marker onto the end of each address.
+func plistStrings(b []byte) []string {
+	if len(b) < 40 || !bytes.HasPrefix(b, []byte("bplist00")) {
+		return nil
+	}
+	t := b[len(b)-32:]
+	offSize, refSize := int(t[6]), int(t[7])
+	count := int(binary.BigEndian.Uint64(t[8:]))
+	table := int(binary.BigEndian.Uint64(t[24:]))
+	if offSize < 1 || offSize > 8 || refSize < 1 || count > 1<<16 || table < 8 || table+count*offSize > len(b)-32 {
+		return nil
+	}
+	uint := func(p []byte) int {
+		v := 0
+		for _, c := range p {
+			v = v<<8 | int(c)
+		}
+		return v
+	}
+	var out []string
+	for i := 0; i < count; i++ {
+		at := uint(b[table+i*offSize : table+(i+1)*offSize])
+		if at <= 0 || at >= len(b)-32 {
+			continue
+		}
+		marker := b[at]
+		kind, n := marker>>4, int(marker&0x0F)
+		p := at + 1
+		if (kind == 5 || kind == 6) && n == 0x0F {
+			// the length is an integer object of its own
+			if p >= len(b) || b[p]>>4 != 1 {
+				continue
+			}
+			w := 1 << (b[p] & 0x0F)
+			if p+1+w > len(b) {
+				continue
+			}
+			n = uint(b[p+1 : p+1+w])
+			p += 1 + w
+		}
+		switch {
+		case kind == 5 && p+n <= len(b):
+			out = append(out, string(b[p:p+n]))
+		case kind == 6 && p+2*n <= len(b):
+			out = append(out, utf16Text(b[p:p+2*n], true))
+		}
+	}
+	return out
+}
+
 // xattr reads one extended attribute of a file, from a ._ file or from the
 // header a Mac's tar writes.
 func (c *run) xattr(where, part, attr string, value []byte) {
 	switch {
 	case strings.Contains(attr, "kMDItemWhereFroms"):
-		for _, u := range urlRe.FindAllString(printable(value), -1) {
+		text := strings.Join(plistStrings(value), "\n")
+		if text == "" {
+			text = printable(value)
+		}
+		for _, u := range urlRe.FindAllString(text, -1) {
 			c.fields = append(c.fields, field{where: where, part: part, kind: kindLink, label: "where it was downloaded from", value: u})
 			c.add(where, part, kindArchive, "where it was downloaded from", u, false)
 		}
