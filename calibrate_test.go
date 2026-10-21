@@ -42,6 +42,7 @@ func TestCalibration(t *testing.T) {
 	count := map[string]int{}
 	tools := map[string]int{}
 	strangers := map[string]map[string]bool{} // a figure Author not among the authors, by paper
+	others := map[string]map[string]bool{}    // a program this does not name, by paper
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 1<<20), 1<<22)
 	for sc.Scan() {
@@ -67,14 +68,25 @@ func TestCalibration(t *testing.T) {
 			}
 		}
 		kinds := map[string]bool{}
+		toolsHere := map[string]bool{}
 		for _, cl := range mine {
 			if cl.level != you {
 				continue
 			}
 			kinds[string(cl.kind)] = true
 			if cl.kind == kindFigure {
-				tools[madeBy(c.fields, cl)]++
+				toolsHere[madeBy(c.fields, cl)] = true
+				if madeBy(c.fields, cl) == "something else" {
+					raw := strings.Join(rawMadeBy(c.fields, cl), " | ")
+					if others[raw] == nil {
+						others[raw] = map[string]bool{}
+					}
+					others[raw][p.File] = true
+				}
 			}
+		}
+		for k := range toolsHere {
+			tools[k]++ // papers, not figures: one paper's twelve figures are one paper
 		}
 		any := false
 		for k := range kinds {
@@ -127,11 +139,25 @@ func TestCalibration(t *testing.T) {
 	sort.Strings(keys)
 	fmt.Printf("\n%d papers read\n", n)
 	for _, k := range keys {
-		fmt.Printf("  %5d  %-55s %s\n", count[k], k, percent(float64(count[k]), float64(n)))
+		share := percent(float64(count[k]), float64(n))
+		if strings.Contains(k, "in all") {
+			share = ""
+		}
+		fmt.Printf("  %5d  %-55s %s\n", count[k], k, share)
 	}
-	fmt.Println("\nwhat made the figures that named an author:")
+	fmt.Println("\n(arXiv writes the authors into the document properties of every paper it serves, so the")
+	fmt.Println("document's own properties say nothing here; what the authors put in is everything else.)")
+	fmt.Println("\npapers whose figures named an author, by what made those figures:")
 	for _, k := range sortedByCount(tools) {
 		fmt.Printf("  %5d  %s\n", tools[k], k)
+	}
+	// A program in three papers or more is a program, and is printed as it
+	// is, so the list above can learn its name.
+	fmt.Println("\nthe programs counted as something else, in three papers or more:")
+	for raw, papers := range others {
+		if len(papers) >= 3 {
+			fmt.Printf("  %5d  %s\n", len(papers), raw)
+		}
 	}
 	// A figure Author that is in three papers or more of different authors
 	// is a program's or a template's, not a person's: printing those is how
@@ -157,17 +183,21 @@ func isAuthor(who string, authors []string) bool {
 	return len(s.find(who)) > 0
 }
 
-// madeBy is the program a figure says made it, said as one of a few
-// names.
-func madeBy(fields []field, cl clue) string {
+func rawMadeBy(fields []field, cl clue) []string {
 	var made []string
 	for _, f := range fields {
 		if f.where == cl.where && f.part == cl.part && (f.label == "made by" || f.label == "producer") {
 			made = append(made, f.value)
 		}
 	}
-	all := strings.ToLower(strings.Join(made, " "))
-	for _, p := range []string{"powerpoint", "word", "excel", "keynote", "pages", "illustrator", "inkscape", "visio", "libreoffice", "openoffice", "draw.io", "omnigraffle", "affinity", "canva", "figma", "google", "matplotlib", "origin", "matlab", "quartz", "acrobat", "foxit", "pdfcreator", "ghostscript", "cairo", "skia"} {
+	return made
+}
+
+// madeBy is the program a figure says made it, said as one of a few
+// names.
+func madeBy(fields []field, cl clue) string {
+	all := strings.ToLower(strings.Join(rawMadeBy(fields, cl), " "))
+	for _, p := range []string{"powerpoint", "word", "excel", "keynote", "pages", "illustrator", "inkscape", "visio", "libreoffice", "openoffice", "draw.io", "omnigraffle", "affinity", "canva", "figma", "google", "matplotlib", "origin", "matlab", "print to pdf", "quartz", "acrobat", "foxit", "wps", "pdfcreator", "ghostscript", "cairo", "skia"} {
 		if strings.Contains(all, p) {
 			return p
 		}

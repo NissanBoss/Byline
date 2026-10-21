@@ -701,7 +701,10 @@ func (p *paperRead) rest() {
 }
 
 // collect gathers the strings in a value, leaving out the keys that hold
-// binary: the file identifiers and the encryption keys.
+// binary, the file identifiers and the encryption keys, and the ones that
+// hold names only TeX made up: hyperref's anchors are cite.zhang2023h2o,
+// and the calibration found an author called Zhang H in every one of them,
+// and a font's list of glyphs, /A/D/E/G/S, in another.
 func collect(v any, out *[]string, depth int) {
 	if depth > 16 {
 		return
@@ -716,9 +719,13 @@ func collect(v any, out *[]string, depth int) {
 			collect(item, out, depth+1)
 		}
 	case Dict:
+		if x["Limits"] != nil || x["Names"] != nil && x["Type"] == nil {
+			return // a node of a name tree: destinations and their keys
+		}
 		for k, item := range x {
 			switch k {
-			case "ID", "O", "U", "OE", "UE", "Perms", "Contents", "ByteRange", "Cert":
+			case "ID", "O", "U", "OE", "UE", "Perms", "Contents", "ByteRange", "Cert",
+				"Dests", "Names", "D", "Dest", "CharSet", "CIDSet", "Lang":
 				continue
 			}
 			collect(item, out, depth+1)

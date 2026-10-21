@@ -24,6 +24,9 @@ var placeholders = map[string]bool{
 	"confidential": true, "draft": true, "untitled": true, "lenovo": true, "dell": true, "hp": true,
 	"asus": true, "acer": true, "toshiba": true, "msi": true, "microsoft": true, "valued customer": true,
 	"registered user": true, "preferred customer": true, "authorized user": true,
+	// Found by the calibration in the figures of many papers by different
+	// people: what some exporter or generator writes as the author.
+	"walnut exporter": true, "openai": true, "chatgpt": true,
 }
 
 // programWords are names of the programs that make figures and of the
