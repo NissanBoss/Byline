@@ -33,7 +33,7 @@ var placeName = map[kind]string{
 }
 
 var advice = map[kind]string{
-	kindFigure:     "pdfTeX copies the document properties of every PDF figure into the paper, and PowerPoint, Word and Keynote write the name of whoever is signed in into those. Put \\pdfsuppressptexinfo=-1 at the top of the main .tex file and compile again; with LuaLaTeX it is \\pdfvariable suppressoptionalinfo 15. Or clear the properties of the figure files themselves.",
+	kindFigure:     "pdfTeX copies the document properties of every PDF figure into the paper, and PowerPoint and Word write the name of whoever is signed in to Office into those. Put \\pdfsuppressptexinfo=-1 at the top of the main .tex file and compile again; with LuaLaTeX it is \\pdfvariable suppressoptionalinfo 15. Or clear the properties of the figure files themselves.",
 	kindFigureXMP:  "This metadata came in with the figure file. Clear it in the figure, or export the figure again with its metadata left out.",
 	kindDocument:   "These are the paper's own properties. With hyperref, \\hypersetup{pdfauthor={},pdftitle={}} sets them; in Word, File, Info, Inspect Document clears them. Then check the result again: some tools leave the old ones in the file.",
 	kindEarlier:    "Clearing a PDF's properties with a tool that appends to the file, as exiftool does, leaves the earlier ones in it; exiftool's own documentation says so. Rewriting the whole file drops them: qpdf --linearize in.pdf out.pdf, then check out.pdf again.",

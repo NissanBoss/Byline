@@ -146,6 +146,11 @@ cp hyperref.pdf cleared.pdf
 exiftool -q -overwrite_original -all= cleared.pdf
 expect cleared.pdf - document 2 "Ada Lovelace" no
 expect cleared.pdf - earlier 2 "Ada Lovelace" yes
+# And exiftool itself can undo the clearing, which is the proof the old
+# properties never left.
+cp cleared.pdf restored.pdf
+exiftool -q -overwrite_original -PDF-update:all= restored.pdf
+expect restored.pdf - document 2 "Ada Lovelace" yes
 qpdf --linearize cleared.pdf rewritten.pdf
 expect rewritten.pdf - earlier 2 "Ada Lovelace" no
 expect rewritten.pdf - document 2 "Ada Lovelace" no
