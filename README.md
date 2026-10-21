@@ -11,7 +11,38 @@ paper sent for double-blind review is not supposed to have one, and many
 still do, in places nobody reads.
 
 ```
-EXAMPLE
+    [YOU     ] A name of yours is in the properties of a figure
+              G***e H****r (Author)
+                in ~/work/_temp/tools/pdftex.pdf: the properties of figure
+                     ./fig-mpl.pdf (page 1)
+
+              pdfTeX copies the document properties of every PDF figure into
+              the paper, and PowerPoint and Word write the name of whoever
+              is signed in to Office into those. Put \pdfsuppressptexinfo=-1
+              at the top of the main .tex file and compile again; with
+              LuaLaTeX it is \pdfvariable suppressoptionalinfo 15. Or clear
+              the properties of the figure files themselves.
+
+    [YOU     ] A name of yours is in what was written into a picture
+              C******e H******l (artist)
+                in ~/work/_temp/tools/pdftex.pdf: what was written into a
+                     picture, 64 by 48, on page 1
+
+    [NAMES   ] Somebody is named in the properties of a figure
+              A*a L******e (Author)
+                in ~/work/_temp/tools/pdftex.pdf: the properties of figure
+                     ./fig-office.pdf (page 1)
+
+    [NAMES   ] 2 people or accounts are named in a repository's own records
+              in ~/work/_temp/tools/supplement.zip > engine/.git/config:
+                   the repository's settings
+                A*a L******e (user name)
+                a*a@a********l.e*****e.o*g (user email)
+
+    [POINTS  ] A picture says where it was taken
+              where it was taken: a position, shown with --reveal
+                in ~/work/_temp/tools/pdftex.pdf: what was written into a
+                     picture, 64 by 48, on page 1
 ```
 
 That is the paper and the supplement the test lab builds with pdfLaTeX,
@@ -22,11 +53,12 @@ printed it.
 
 ## The problem
 
-Most of computer science decides what to publish by double-blind review.
-NeurIPS 2025 received 21,575 papers and AAAI 2026 nearly 29,000, each read
-by reviewers who are not supposed to know whose it is. Venues desk-reject
-papers that give their authors away, and every author kit says the same
-thing: anonymise the text, and clear the PDF's metadata.
+Machine learning, and much of the rest of computer science, decides what
+to publish by double-blind review. NeurIPS 2025 received 21,575 papers and
+AAAI 2026 nearly 29,000, each read by reviewers who are not supposed to know
+whose it is. Venues desk-reject papers that give their authors away, and
+the author kits say the same thing: anonymise the text, and clear the PDF's
+metadata.
 
 The metadata people clear is the paper's own: the Author and Title a
 properties dialog shows, the ones `exiftool` and `pdfinfo` print. The ones
@@ -39,8 +71,11 @@ that give them away are elsewhere.
   whoever is signed in to Office into every PDF they save, and LibreOffice
   writes the document's author. The architecture diagram drawn in
   PowerPoint and saved as a PDF puts its author's name inside the
-  anonymous paper, where no viewer shows it and no checker reads it.
-  CALIBRATION-FIGURES
+  anonymous paper, where no viewer shows it and no checker reads it. Of
+  the 1,000 most recent papers on arXiv in computer science and
+  statistics, 713 carry their figures' own properties; in 144 a figure
+  names somebody, and in 55 it names one of the paper's own authors, letter
+  for letter. PowerPoint made those figures more often than anything else.
 - **A photo goes in with what the camera wrote.** pdfTeX, LuaTeX and
   XeTeX all put a JPEG into the paper byte for byte: the Artist the camera
   was set up with, its serial number, where it was taken, the by-line an
@@ -72,7 +107,8 @@ of them.
   are never looked at.
 - [arxiv_latex_cleaner](https://github.com/google-research/arxiv-latex-cleaner),
   from Google Research, cleans the LaTeX sources before they go to arXiv:
-  comments, unused files, the `\todo`s. It never sees the compiled PDF.
+  comments, unused files, oversized pictures. It never sees the compiled
+  PDF.
 - [pdfprivacy](https://ctan.org/pkg/pdfprivacy) is a LaTeX package that
   stops pdfTeX writing the PTEX entries, figures' properties included. It
   works, for whoever knows to load it; the lab below checks it does.
@@ -161,20 +197,94 @@ nothing found.
 
 **The lab.** `testdata/tools.sh` makes papers the way people make them, and
 `tools.yml` checks each in GitHub Actions for what must be in it and what
-must not:
+must not. These are its findings, and each is a line the build fails on:
 
-LAB
+- **pdfLaTeX** copies the properties of every PDF figure into the paper,
+  with the figure's file name. `\pdfsuppressptexinfo=-1` stops
+  that, and so does the pdfprivacy package. **LuaLaTeX** copies them too,
+  and `\pdfvariable suppressoptionalinfo 15` stops it. **XeLaTeX** does not
+  copy them.
+- **The switch does not stop everything.** A figure's XMP metadata, and
+  the copy of its own file Illustrator keeps inside a PDF it saves, are
+  carried into the paper by pdfLaTeX with `\pdfsuppressptexinfo=-1` set as
+  much as without it. They belong to the figure's page, not to pdfTeX's own
+  entries.
+- **All three engines put a JPEG in with its EXIF**: the artist, the
+  serial number and the position exiftool wrote into the photo come out of
+  the paper. A PNG's text chunks do not: pdfTeX unpacks its pixels and
+  leaves them behind.
+- **LibreOffice writes the document's author** into a PDF it exports;
+  matplotlib writes one only when given it.
+- **exiftool -all= leaves the old properties in the paper**, and
+  `exiftool -PDF-update:all=` brings them back. `qpdf --linearize` writes
+  the file afresh and drops them.
+- **A comment added with pypdf keeps the name it was given.**
+- **On a Mac**, the zip Finder makes keeps the address a file was
+  downloaded from and the program that downloaded it. The Mac's own `tar`
+  keeps the address too, even with `COPYFILE_DISABLE=1` and
+  `--no-mac-metadata`; `--no-xattrs` leaves it out, and so does `zip` from
+  the command line.
+- **GNU tar writes the login of whoever packed it** against every file,
+  and `--owner=0 --group=0 --numeric-owner` leaves it out.
 
 **The calibration.** arXiv's papers are not anonymous, which is what makes
 them useful: their authors are listed beside them, so whether a figure
 names one of them can be checked. `calibrate.yml` reads recent papers in
-computer science and statistics, with their authors given and without.
+computer science and statistics, with their authors given and without,
+and prints only counts. The last run read the 1,000 most recent, in October
+2026:
 
-CALIBRATION
+- **713 (71%) carry their figures' own properties**, 6,110 figures in all.
+- **144 (14%) have a figure whose properties name somebody, and 55 (5.5%)
+  one whose properties name one of the paper's own authors**, in one of
+  the forms above. PowerPoint made the figures in 23 of those 55; a Mac's
+  own PDF engine, with no program named, in 8; Canva in 4; Word, Keynote,
+  LibreOffice, MATLAB, OmniGraffle, Foxit and Windows' Print to PDF in one
+  or two each; 10 do not say.
+- **62 (6%) name an author somewhere no reader shows**: the 55 in a
+  figure's properties, 6 in the bookmarks, and one in the copy of an
+  Illustrator file a figure carried in with it.
+- **Most of the other names are people too.** Of the figure authors that
+  are none of the paper's, most are logins, first names, addresses and
+  names written in another script, which match no author letter for
+  letter; the few that are programs signing what they export are left
+  out, and the calibration prints any that turns up in three papers or
+  more.
+- **129 (13%) link to an address with an author's name in it**, their
+  own repository mostly. In an anonymous version that address would have
+  been another.
+- **579 (58%) have a figure whose clock is set to a time zone other than
+  UTC**, which says roughly where the machine that made it was.
+- **2 have a photo with the position it was taken at**, and one with its
+  camera's serial number.
+- **The words are read.** An author's name was found in the text of 992,
+  which is the check on the font decoding, since arXiv's papers have their
+  authors on the first page. 40 (4%) have words in a font that could not be
+  read, and the report says so.
 
-**What the calibration taught**, all of it in the code:
+**What the lab and the calibration taught**, all of it in the code:
 
-LESSONS
+- pdfTeX writes every parenthesis in a string, and every code below 32, as
+  an octal escape. Read as text, "(PFMs)" came out as "050PFMs051", and a
+  ligature as a number.
+- A paper sets each author's affiliation against the name, Vardi1 and
+  Doe1, Jane2. Names are compared with digits taken for gaps; logins and
+  addresses keep theirs, since jdoe4 is not jdoe.
+- `exiftool -all=` writes a save whose trailer names no properties at all.
+  The first version took the trailer before it for the one in force, and
+  reported the properties exiftool had been asked to clear as the
+  document's own, rather than as an earlier save's.
+- A Mac keeps a download address in a binary property list. Read as bytes,
+  the next object's marker came out stuck to the end of the address.
+- Swept for leftover strings, a paper is full of what TeX made up:
+  hyperref's anchors are `cite.zhang2023h2o`, which found an author called
+  Zhang H in every one of them, and a font's list of glyphs, `/A/D/E/G/S`,
+  found another. Neither is read now.
+- Some exporters sign the figures they make. "Walnut Exporter" is the
+  Author of figures in 25 papers by different people, "OpenAI" in three.
+  They are not names.
+- arXiv writes the authors into the document properties of every paper it
+  serves. That is why the calibration counts everything but those.
 
 ## What it cannot do
 
