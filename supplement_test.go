@@ -45,6 +45,28 @@ func TestASupplementNamesItsAuthors(t *testing.T) {
 	}
 }
 
+// The first run over real files found these: a Go test that builds PDFs,
+// taken for a broken one; a README whose first line began "authors:",
+// taken for a package's author field; and a one-letter user in a path.
+func TestRealFilesThatFooledIt(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, body string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("pdf_test.go", "package main\n\nvar head = []byte(\"%PDF-1.7\\n\")\n")
+	write("README.md", "Whether a paper still names its\nauthors: in the properties of every figure.\n")
+	write("paths.txt", "see /Users/m/figs and C:\\Users\\x\\Desktop\n")
+	c, clues := check(t, nil, dir)
+	if len(c.gaps) > 0 {
+		t.Errorf("a text file was read as a PDF: %v", c.gaps)
+	}
+	for _, cl := range clues {
+		t.Errorf("found %q (%s) in %s", cl.what, cl.label, cl.where)
+	}
+}
+
 // tar writes the login of whoever packed it against every file.
 func TestTarOwners(t *testing.T) {
 	tb := tarOf(t, "alovelace", map[string]string{"a.txt": "x", "b.txt": "y"})

@@ -107,7 +107,9 @@ func isManifest(base string) bool {
 	case "setup.py", "setup.cfg", "pyproject.toml", "cargo.toml", "description", "conf.py", "__init__.py",
 		"_version.py", "__about__.py", "meta.yaml", "environment.yml", "pubspec.yaml", "gemspec", "build.sbt",
 		"project.clj", "mix.exs", "dune-project", "package.yaml", "stack.yaml", "flake.nix", "default.nix",
-		"citation.cff", "codemeta.json", "readme.md", "readme", "readme.txt", "readme.rst":
+		"citation.cff", "codemeta.json":
+		// Not a README: its prose begins lines with "authors:" as often as
+		// it lists any, and this one's own first paragraph did.
 		return true
 	}
 	return strings.HasSuffix(base, ".gemspec") || strings.HasSuffix(base, ".cabal") || strings.HasSuffix(base, ".nuspec")

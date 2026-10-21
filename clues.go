@@ -263,7 +263,7 @@ func homeFolders(s string) []string {
 	}
 	for _, m := range matches {
 		u := strings.TrimSpace(m[1])
-		if u == "" || machineUsers[strings.ToLower(u)] || strings.HasPrefix(u, "$") || strings.HasPrefix(u, "%") || strings.HasPrefix(u, "{") || strings.HasPrefix(u, "<") {
+		if len([]rune(u)) < 2 || machineUsers[strings.ToLower(u)] || strings.HasPrefix(u, "$") || strings.HasPrefix(u, "%") || strings.HasPrefix(u, "{") || strings.HasPrefix(u, "<") {
 			continue
 		}
 		out = append(out, u)

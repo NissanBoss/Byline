@@ -1,5 +1,17 @@
 # Changes
 
+## v1.1
+
+What the first run of v1 over real files on a real machine found, the
+same day:
+
+- A text file with "%PDF-" near its top, a test that builds PDFs, was
+  taken for a PDF and reported as one that could not be read. A file is a
+  PDF now when it starts like one, or is called one.
+- A README was read as a package's manifest, and a line of prose that
+  began "authors:" came out as an author. READMEs are read as text.
+- A path with a one-letter user in it was reported as a home folder.
+
 ## v1
 
 The first release. Give it the paper you are about to send for anonymous

@@ -148,9 +148,8 @@ func (c *run) inspect(where, name string, data []byte, depth int) {
 	}
 	lower := strings.ToLower(name)
 	base := path.Base(strings.ReplaceAll(lower, `\`, "/"))
-	head := data[:min(len(data), 1024)]
 	switch {
-	case bytes.Contains(head, []byte("%PDF-")):
+	case looksPDF(base, data):
 		c.paper(where, data, depth)
 	case strings.HasPrefix(base, "._") || strings.Contains(lower, "__macosx/"):
 		c.appleDouble(where, name, data)
@@ -199,6 +198,19 @@ func (c *run) inspect(where, name string, data []byte, depth int) {
 	default:
 		c.skipped["binary"]++
 	}
+}
+
+// looksPDF says whether a file is a PDF: it starts like one, or it is
+// called one and starts like one after some junk, which the format allows.
+// Finding "%PDF-" anywhere near the top is not enough: the first run over
+// real files took a Go test that builds PDFs for one, and reported it
+// broken.
+func looksPDF(base string, data []byte) bool {
+	start := bytes.TrimLeft(data[:min(len(data), 16)], "\xef\xbb\xbf \t\r\n")
+	if bytes.HasPrefix(start, []byte("%PDF-")) {
+		return true
+	}
+	return strings.HasSuffix(base, ".pdf") && bytes.Contains(data[:min(len(data), 1024)], []byte("%PDF-"))
 }
 
 func (c *run) entries(where string, entries []entry, depth int) {
