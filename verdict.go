@@ -50,7 +50,7 @@ var advice = map[kind]string{
 	kindManifest:   "Package files name their authors on purpose. Blank these in the copy that goes to review.",
 	kindGit:        "A .git folder carries the repository's settings and its history, with every commit's author and address. Send the files without it: git archive makes such a copy.",
 	kindOffice:     "Word, PowerPoint and Excel keep who created and who last saved a file, and the name on every comment and tracked change. File, Info, Check for Issues, Inspect Document clears them.",
-	kindArchive:    "tar writes the login name of whoever packed it against every file, and a zip made by a Mac's Finder keeps each file's extended attributes in __MACOSX, the address it was downloaded from among them. tar --owner=0 --group=0 --numeric-owner, or zip from the command line, leaves both out.",
+	kindArchive:    "tar writes the login name of whoever packed it against every file, and a zip made by a Mac's Finder keeps each file's extended attributes in __MACOSX, the address it was downloaded from among them. GNU tar leaves the login out with --owner=0 --group=0 --numeric-owner, and zip from the command line leaves the attributes out. A Mac's own tar keeps them even with COPYFILE_DISABLE=1 and --no-mac-metadata, which only stop the ._ files; --no-xattrs is what leaves them out.",
 	kindFile:       "This is in a file of the supplementary material.",
 }
 

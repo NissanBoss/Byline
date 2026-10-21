@@ -45,6 +45,13 @@ jobs:
       - name: Check them
         run: BYLINE_TOOLS="$RUNNER_TEMP/tools" go test -run TestMadeByTools -v .
 
+      # The README's example is this, as it comes out.
+      - name: The report on one of them
+        run: |
+          go build -o "$RUNNER_TEMP/byline" .
+          cd "$RUNNER_TEMP/tools"
+          "$RUNNER_TEMP/byline" --name "Grace Hopper" --name "Caroline Herschel" pdftex.pdf supplement.zip || true
+
   mac:
     runs-on: macos-latest
     timeout-minutes: 15
