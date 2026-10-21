@@ -31,9 +31,12 @@ func TestCalibration(t *testing.T) {
 		File    string   `json:"file"`
 		Authors []string `json:"authors"`
 	}
+	// The places no reader shows. A link to the authors' own repository is
+	// left out: in a paper on arXiv it is meant to be there, and the
+	// anonymous version would have had another address.
 	hidden := map[kind]bool{
 		kindFigure: true, kindFigureXMP: true, kindPicture: true, kindPrivate: true, kindComment: true,
-		kindEarlier: true, kindAttachment: true, kindObject: true, kindOutline: true, kindForm: true, kindLink: true,
+		kindEarlier: true, kindAttachment: true, kindObject: true, kindOutline: true, kindForm: true,
 	}
 	n := 0
 	count := map[string]int{}
