@@ -188,7 +188,7 @@ def stream(text):
     return w._add_object(s)
 xmp = '<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator><rdf:Seq><rdf:li>Mary Somerville</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>'
 page[NameObject("/Metadata")] = stream(xmp)
-private = DictionaryObject({NameObject("/AIMetaData"): stream("%!PS-Adobe-3.0\n%%Creator: Adobe Illustrator(R) 28.0\n%%For: Emmy Noether\n" + xmp.replace("Mary Somerville", "Emmy Noether"))})
+private = DictionaryObject({NameObject("/AIMetaData"): stream("%!PS-Adobe-3.0\n%%Creator: Adobe Illustrator(R) 28.0\n%%For: (enoether) ()\n" + xmp.replace("Mary Somerville", "Emmy Noether"))})
 page[NameObject("/PieceInfo")] = DictionaryObject({NameObject("/Illustrator"): DictionaryObject({
     NameObject("/LastModified"): TextStringObject("D:20261020101010Z"), NameObject("/Private"): private})})
 w.write("fig-ai.pdf")
@@ -202,7 +202,8 @@ cat > pieceinfo.tex <<'END'
 END
 pdflatex -interaction=nonstopmode pieceinfo.tex >/dev/null 2>&1 || { tail -20 pieceinfo.log; exit 1; }
 expect fig-ai.pdf - private 2 "Emmy Noether" yes
-expect fig-ai.pdf - private 2 "saved for" yes
+expect fig-ai.pdf - private 2 "enoether" yes
+expect pieceinfo.pdf - private 2 "enoether" yes
 expect pieceinfo.pdf - figure-xmp 2 "Mary Somerville" yes
 expect pieceinfo.pdf - private 2 "Emmy Noether" yes
 
