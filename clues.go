@@ -152,16 +152,20 @@ func examine(fields []field, mine *nameSet) []clue {
 				continue
 			}
 		}
+		authors := map[string]bool{}
 		if f.author {
 			for _, who := range people(v) {
 				if !nobody(who) {
+					authors[who] = true
 					add(clue{field: at(f, names), what: who})
 				}
 			}
 		}
 		if f.kind != kindReferences {
 			for _, e := range emails(v) {
-				add(clue{field: at(f, names), what: e, why: "an email address"})
+				if !authors[e] {
+					add(clue{field: at(f, names), what: e, why: "an email address"})
+				}
 			}
 		}
 		for _, h := range homeFolders(v) {
@@ -173,6 +177,30 @@ func examine(fields []field, mine *nameSet) []clue {
 		for _, l := range links(f) {
 			add(clue{field: at(f, points), what: l.url, why: l.why})
 		}
+	}
+	return withoutEchoes(out)
+}
+
+// withoutEchoes drops what the whole text of a file, or the sweep of a
+// PDF's leftover strings, finds again after a particular place already did:
+// the address in pyproject.toml's author fields is not news a second time
+// as an address somewhere in pyproject.toml.
+func withoutEchoes(clues []clue) []clue {
+	particular := map[string]bool{}
+	key := func(cl clue) string {
+		return fmt.Sprint(cl.level) + "\x00" + cl.where + "\x00" + strings.ToLower(cl.what)
+	}
+	for _, cl := range clues {
+		if cl.kind != kindFile && cl.kind != kindObject {
+			particular[key(cl)] = true
+		}
+	}
+	out := clues[:0]
+	for _, cl := range clues {
+		if (cl.kind == kindFile || cl.kind == kindObject) && particular[key(cl)] {
+			continue
+		}
+		out = append(out, cl)
 	}
 	return out
 }

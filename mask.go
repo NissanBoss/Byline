@@ -40,7 +40,7 @@ var serviceWords = map[string]bool{
 	"user": true, "faculty": true, "home": true, "www": true, "https": true, "http": true, "com": true,
 	"org": true, "net": true, "edu": true, "ac": true, "io": true, "co": true, "uk": true, "de": true,
 	"datasets": true, "spaces": true, "file": true, "folders": true, "open": true, "osf": true,
-	"substack": true, "box": true, "pages": true, "blob": true, "tree": true, "main": true, "master": true,
+	"git": true, "substack": true, "box": true, "pages": true, "blob": true, "tree": true, "main": true, "master": true,
 }
 
 // labelWords are this program's own, put around what a file says. Masking

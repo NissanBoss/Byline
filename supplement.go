@@ -159,7 +159,6 @@ func (c *run) git(where, base, text string) {
 				u = "https://" + strings.Replace(rest, ":", "/", 1)
 			}
 			c.fields = append(c.fields, field{where: where, part: "the repository's settings", kind: kindLink, label: "remote", value: u})
-			c.add(where, "the repository's settings", kindGit, "remote", u, false)
 		}
 	case "head", "fetch_head", "description":
 		zones := map[string]bool{}
@@ -302,8 +301,7 @@ func (c *run) xattr(where, part, attr string, value []byte) {
 			text = printable(value)
 		}
 		for _, u := range urlRe.FindAllString(text, -1) {
-			c.fields = append(c.fields, field{where: where, part: part, kind: kindLink, label: "where it was downloaded from", value: u})
-			c.add(where, part, kindArchive, "where it was downloaded from", u, false)
+			c.addFixed(where, part, kindArchive, "where it was downloaded from", u, points)
 		}
 	case attr == "com.apple.quarantine":
 		q := strings.Split(string(value), ";")

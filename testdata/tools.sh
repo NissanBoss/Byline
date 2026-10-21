@@ -31,21 +31,21 @@ if [ "$2" = "mac" ]; then
     xattr -wx com.apple.metadata:kMDItemWhereFroms "$WHERE" mac/data/results.csv
     xattr -w com.apple.quarantine "0083;6720f000;Safari;" mac/data/results.csv
     (cd mac && ditto -c -k --sequesterRsrc --keepParent data ../finder.zip)
-    expect finder.zip - link 1 example-university.edu yes
+    expect finder.zip - archive 1 example-university.edu yes
     expect finder.zip - archive 0 Safari yes
     # The Mac's own tar keeps the same attributes, unless told not to.
     (cd mac && tar -czf ../mac.tgz data)
-    expect mac.tgz - link 1 example-university.edu yes
+    expect mac.tgz - archive 1 example-university.edu yes
     # Nor do COPYFILE_DISABLE and --no-mac-metadata leave it out, which is
     # what every answer about ._ files says to use: they stop the ._
     # entries, and the attributes go into the headers instead.
     (cd mac && COPYFILE_DISABLE=1 tar --no-mac-metadata -czf ../mac-nometa.tgz data)
-    expect mac-nometa.tgz - link 1 example-university.edu yes
+    expect mac-nometa.tgz - archive 1 example-university.edu yes
     (cd mac && COPYFILE_DISABLE=1 tar --no-mac-metadata --no-xattrs -czf ../mac-clean.tgz data)
-    expect mac-clean.tgz - link 1 example-university.edu no
+    expect mac-clean.tgz - archive 1 example-university.edu no
     # zip from the command line keeps none of it.
     (cd mac && zip -qr ../cli.zip data)
-    expect cli.zip - link 1 example-university.edu no
+    expect cli.zip - archive 1 example-university.edu no
     exit 0
 fi
 

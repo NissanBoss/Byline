@@ -101,10 +101,13 @@ func (c *run) report() *Report {
 		r.add(c.finding(g.lv, g.k, g.clues))
 	}
 	if figuresWithProperties > 0 && !figureFound {
-		r.add(Finding{Tag: "NOTE    ", Weight: Note,
-			Title:  fmt.Sprintf("%s keep the properties of the files they came from", capital(plural(figuresWithProperties, "figure", "figures"))),
-			Lines:  []string{"None of them names anybody now. A figure exported again later may."},
-			Advice: advice[kindFigure]})
+		title := "1 figure keeps the properties of the file it came from"
+		line := "It names nobody now. Exported again from another machine, it may."
+		if figuresWithProperties > 1 {
+			title = fmt.Sprintf("%s figures keep the properties of the files they came from", commas(figuresWithProperties))
+			line = "None of them names anybody now. Exported again from another machine, one may."
+		}
+		r.add(Finding{Tag: "NOTE    ", Weight: Note, Title: title, Lines: []string{line}, Advice: advice[kindFigure]})
 	}
 	if len(r.Findings) == 0 && c.read > 0 && len(r.Gaps) == 0 {
 		line := "That covers every place listed in the README. What a paper says, how it is written and what it cites can give its authors away too, and none of that is judged here."
@@ -223,6 +226,10 @@ func dedupe(list []string) []string {
 // it is.
 func (c *run) headOf(cl clue) string {
 	switch {
+	case cl.fixed && strings.Contains(cl.what, "://"):
+		return c.show.link(cl.what) + " (" + cl.label + ")"
+	case cl.fixed:
+		return cl.label + ": " + c.show.fixed(cl)
 	case cl.level == points:
 		return c.show.link(cl.what) + ", " + cl.why
 	case cl.match != "":
@@ -238,8 +245,6 @@ func (c *run) headOf(cl clue) string {
 		return "the home folder of " + c.show.text(cl.what)
 	case cl.why != "":
 		return c.show.text(cl.what) + ", " + cl.why
-	case cl.fixed:
-		return cl.label + ": " + c.show.fixed(cl)
 	}
 	return c.show.text(cl.what) + " (" + cl.label + ")"
 }
@@ -257,7 +262,12 @@ func (c *run) title(lv level, k kind, place string, n int) string {
 		}
 		return fmt.Sprintf("%d people or accounts are named in %s", n, place)
 	case points:
-		if n == 1 {
+		switch {
+		case k == kindPicture:
+			return "A picture says where it was taken"
+		case k == kindArchive:
+			return "An archive says where its files were downloaded from"
+		case n == 1:
 			return "It links to a place that leads to somebody"
 		}
 		return fmt.Sprintf("It links to %d places that lead to somebody", n)
