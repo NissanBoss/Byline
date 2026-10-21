@@ -1,0 +1,62 @@
+name: Made by tools
+
+# Papers made the way people make them: figures exported by LibreOffice
+# and matplotlib, a photo tagged by exiftool, compiled by pdfLaTeX,
+# LuaLaTeX and XeLaTeX, properties "cleared" by exiftool and rewritten by
+# qpdf, a comment added by pypdf, a supplement zipped and tarred; and on a
+# Mac, the zip Finder makes. Each must come out with what testdata/tools.sh
+# says is in it, and without what it says is not.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - name: Install the tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends \
+            texlive-latex-base texlive-latex-recommended texlive-latex-extra \
+            texlive-luatex texlive-xetex texlive-fonts-recommended lmodern \
+            libreoffice-draw libreoffice-writer libimage-exiftool-perl qpdf \
+            python3-matplotlib python3-pil python3-pip zip
+          pip3 install --break-system-packages -q pypdf
+          pdflatex --version | head -1
+          lualatex --version | head -1
+          xelatex --version | head -1
+          exiftool -ver
+          qpdf --version | head -1
+          soffice --version
+
+      - name: Make the papers
+        run: sh testdata/tools.sh "$RUNNER_TEMP/tools"
+
+      - name: Check them
+        run: BYLINE_TOOLS="$RUNNER_TEMP/tools" go test -run TestMadeByTools -v .
+
+  mac:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - name: Make the archives
+        run: sh testdata/tools.sh "$RUNNER_TEMP/tools" mac
+
+      - name: Check them
+        run: BYLINE_TOOLS="$RUNNER_TEMP/tools" go test -run TestMadeByTools -v .

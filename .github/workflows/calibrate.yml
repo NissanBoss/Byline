@@ -1,0 +1,37 @@
+name: Calibration
+
+# Recent papers from arXiv in computer science and statistics, downloaded
+# one every three seconds as arXiv asks, and read with their authors given.
+# The README's numbers come from here. Only counts are printed, and the
+# papers go when the runner does. By hand, and once a month.
+
+on:
+  schedule:
+    - cron: "41 3 7 * *"
+  workflow_dispatch:
+    inputs:
+      papers:
+        description: "papers"
+        default: "1000"
+      start:
+        description: "skip this many of the newest"
+        default: "0"
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - name: Download
+        run: |
+          python3 testdata/arxiv.py "$RUNNER_TEMP/cal" "${{ github.event.inputs.papers || '1000' }}" "${{ github.event.inputs.start || '0' }}"
+          du -sh "$RUNNER_TEMP/cal"
+
+      - name: Count
+        run: BYLINE_CALIBRATION="$RUNNER_TEMP/cal" go test -run TestCalibration -v -timeout 60m .
