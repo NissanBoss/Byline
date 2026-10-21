@@ -204,6 +204,12 @@ pdflatex -interaction=nonstopmode pieceinfo.tex >/dev/null 2>&1 || { tail -20 pi
 expect fig-ai.pdf - private 2 "Emmy Noether" yes
 expect fig-ai.pdf - private 2 "enoether" yes
 expect pieceinfo.pdf - private 2 "enoether" yes
+# The switch that stops pdfTeX copying a figure's properties is about the
+# PTEX entries only; whether it stops the rest is checked here.
+{ echo '\pdfsuppressptexinfo=-1'; cat pieceinfo.tex; } > pieceinfo-suppressed.tex
+pdflatex -interaction=nonstopmode pieceinfo-suppressed.tex >/dev/null 2>&1 || { tail -20 pieceinfo-suppressed.log; exit 1; }
+expect pieceinfo-suppressed.pdf - figure-xmp 2 "Mary Somerville" yes
+expect pieceinfo-suppressed.pdf - private 2 "Emmy Noether" yes
 expect pieceinfo.pdf - figure-xmp 2 "Mary Somerville" yes
 expect pieceinfo.pdf - private 2 "Emmy Noether" yes
 
