@@ -428,9 +428,16 @@ func (p *paperRead) private(pi Dict, owner string) {
 				p.add(kindPrivate, part, v.label, v.value, v.author)
 			}
 		}
+		// Illustrator's copy is PostScript underneath, and its header says
+		// who it was saved for: the user account, as %%For.
+		for _, m := range forRe.FindAllSubmatch(all, 4) {
+			p.add(kindPrivate, part, "saved for", strings.Trim(string(m[1]), "() \t"), true)
+		}
 		p.add(kindPrivate, part, "contents", printable(all), false)
 	}
 }
+
+var forRe = regexp.MustCompile(`%%For:[ \t]*([^\r\n]+)`)
 
 // picture reads what a camera or an editor wrote into a picture: only a
 // JPEG or a JPEG 2000 still has it, because those are copied in as they

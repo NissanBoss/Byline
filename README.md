@@ -180,9 +180,11 @@ LESSONS
 
 - **It does not judge the writing.** A paper can give its authors away by
   what it says: "in our previous work [12]", the dataset only one lab has,
-  the style. Language models are getting good at guessing authors from the
-  text alone. None of that is in a file's metadata, and none of it is
-  looked at here.
+  the style. Language models have become good at guessing authors from the
+  text alone, as
+  [Large Language Models Threaten Double-blind Review](https://arxiv.org/abs/2608.05157)
+  measures. None of that is in a file's metadata, and none of it is looked
+  at here.
 - **It does not read pictures as pictures.** A university's crest in a
   slide, a name in a screenshot, a watermark: telling those needs OCR,
   which is a guess. Only what is written into a picture's metadata is read.

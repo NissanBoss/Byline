@@ -172,6 +172,40 @@ w.write("commented.pdf")
 END
 expect commented.pdf - comment 2 "Emmy Noether" yes
 
+# A figure as Illustrator saves it: XMP metadata on the page, and the
+# application's own copy of the document in PieceInfo, which Illustrator
+# writes while Preserve Illustrator Editing Capabilities is ticked. Made
+# with pypdf, since there is no Illustrator on a runner; what is checked is
+# whether pdfTeX carries those two into the paper.
+python3 - <<'END'
+from pypdf import PdfWriter
+from pypdf.generic import DictionaryObject, NameObject, StreamObject, TextStringObject
+w = PdfWriter(clone_from="fig-plain.pdf")
+page = w.pages[0]
+def stream(text):
+    s = StreamObject()
+    s.set_data(text.encode())
+    return w._add_object(s)
+xmp = '<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator><rdf:Seq><rdf:li>Mary Somerville</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>'
+page[NameObject("/Metadata")] = stream(xmp)
+private = DictionaryObject({NameObject("/AIMetaData"): stream("%!PS-Adobe-3.0\n%%Creator: Adobe Illustrator(R) 28.0\n%%For: Emmy Noether\n" + xmp.replace("Mary Somerville", "Emmy Noether"))})
+page[NameObject("/PieceInfo")] = DictionaryObject({NameObject("/Illustrator"): DictionaryObject({
+    NameObject("/LastModified"): TextStringObject("D:20261020101010Z"), NameObject("/Private"): private})})
+w.write("fig-ai.pdf")
+END
+cat > pieceinfo.tex <<'END'
+\documentclass{article}
+\usepackage{graphicx}
+\begin{document}
+\includegraphics[width=3cm]{fig-ai.pdf}
+\end{document}
+END
+pdflatex -interaction=nonstopmode pieceinfo.tex >/dev/null 2>&1 || { tail -20 pieceinfo.log; exit 1; }
+expect fig-ai.pdf - private 2 "Emmy Noether" yes
+expect fig-ai.pdf - private 2 "saved for" yes
+expect pieceinfo.pdf - figure-xmp 2 "Mary Somerville" yes
+expect pieceinfo.pdf - private 2 "Emmy Noether" yes
+
 # The supplementary material: a repository with its .git, zipped and
 # tarred the usual ways, and a document from LibreOffice.
 mkdir -p sup/engine
